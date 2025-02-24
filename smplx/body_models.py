@@ -342,7 +342,7 @@ class SMPL(nn.Module):
         T_w = transl
         num_frames = transl.shape[0]
         R_c = matrix_to_axis_angle(torch.bmm(world2cam[:3, :3][None, :, :].repeat(num_frames, 1, 1), axis_angle_to_matrix(R_w)))
-        T_c = (torch.bmm(world2cam[:3, :3][None, :, :].repeat(12, 1, 1), (T_w+hip_transl)[:, :, None]) + world2cam[None, :3, 3:])[:, :, 0] - hip_transl
+        T_c = (torch.bmm(world2cam[:3, :3][None, :, :].repeat(num_frames, 1, 1), (T_w+hip_transl)[:, :, None]) + world2cam[None, :3, 3:])[:, :, 0] - hip_transl
         return (R_c, T_c)
         
     def extra_repr(self) -> str:
