@@ -308,7 +308,43 @@ class SMPL(nn.Module):
         J = vertices2joints(self.J_regressor, v_shaped)
         T_hip = J[:, 0]
         return T_hip
-
+        
+    def transform_mano_params(self, betas, global_orient, transl, world2cam):
+        """
+        Transforms MANO model parameters from world coordinates to camera coordinates.
+        Parameters:
+        - betas (torch.Tensor): Shape parameters of the MANO model with shape (num_frames, num_betas).
+        - global_orient (torch.Tensor): Global orientation in axis-angle format with shape (num_frames, 3).
+        - transl (torch.Tensor): Translation vectors with shape (num_frames, 3).
+        - world2cam (torch.Tensor): Transformation matrix from world to camera coordinates with shape (4, 4).
+        Returns:
+        - R_c (torch.Tensor): Transformed global orientation in camera coordinates, in axis-angle format with shape (num_frames, 3).
+        - T_c (torch.Tensor): Transformed translation vectors in camera coordinates with shape (num_frames, 3).
+        This function assumes:
+        - The input tensors `betas`, `global_orient`, and `transl` have the same number of frames.
+        - The `world2cam` matrix is a 4x4 transformation matrix that is shared across all frames.
+        """
+        from pytorch3d.transforms import matrix_to_axis_angle, axis_angle_to_matrix
+        num_frames = betas.shape[0]
+        assert len(betas.shape) == 2
+        assert len(global_orient.shape) == 2
+        assert len(transl.shape) == 2
+        assert len(world2cam.shape) == 2
+        assert global_orient.shape[0] == num_frames
+        assert global_orient.shape[1] == 3
+        assert transl.shape[0] == num_frames
+        assert transl.shape[1] == 3
+        assert world2cam.shape[0] == 4
+        assert world2cam.shape[1] == 4
+        
+        hip_transl = self.get_T_hip(torch.FloatTensor(betas))
+        R_w = global_orient
+        T_w = transl
+        num_frames = transl.shape[0]
+        R_c = matrix_to_axis_angle(torch.bmm(world2cam[:3, :3][None, :, :].repeat(num_frames, 1, 1), axis_angle_to_matrix(R_w)))
+        T_c = (torch.bmm(world2cam[:3, :3][None, :, :].repeat(12, 1, 1), (T_w+hip_transl)[:, :, None]) + world2cam[None, :3, 3:])[:, :, 0] - hip_transl
+        return (R_c, T_c)
+        
     def extra_repr(self) -> str:
         msg = [
             f'Gender: {self.gender.upper()}',
