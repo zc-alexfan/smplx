@@ -148,10 +148,10 @@ class SMPL(nn.Module):
         self.batch_size = batch_size
         shapedirs = data_struct.shapedirs
         if (shapedirs.shape[-1] < self.SHAPE_SPACE_DIM):
-            print(f'WARNING: You are using a {self.name()} model, with only'
-                  f' {shapedirs.shape[-1]} shape coefficients.\n'
-                  f'num_betas={num_betas}, shapedirs.shape={shapedirs.shape}, '
-                  f'self.SHAPE_SPACE_DIM={self.SHAPE_SPACE_DIM}')
+            # print(f'WARNING: You are using a {self.name()} model, with only'
+            #       f' {shapedirs.shape[-1]} shape coefficients.\n'
+            #       f'num_betas={num_betas}, shapedirs.shape={shapedirs.shape}, '
+            #       f'self.SHAPE_SPACE_DIM={self.SHAPE_SPACE_DIM}')
             num_betas = min(num_betas, shapedirs.shape[-1])
         else:
             num_betas = min(num_betas, self.SHAPE_SPACE_DIM)
@@ -388,7 +388,7 @@ class SMPL(nn.Module):
             num_repeats = int(batch_size / betas.shape[0])
             betas = betas.expand(num_repeats, -1)
 
-        vertices, joints = lbs(betas, full_pose, self.v_template,
+        vertices, joints, T_weighted, W, T = lbs(betas, full_pose, self.v_template,
                                self.shapedirs, self.posedirs,
                                self.J_regressor, self.parents,
                                self.lbs_weights, pose2rot=pose2rot)
@@ -493,7 +493,7 @@ class SMPLLayer(SMPL):
              body_pose.reshape(-1, self.NUM_BODY_JOINTS, 3, 3)],
             dim=1)
 
-        vertices, joints = lbs(betas, full_pose, self.v_template,
+        vertices, joints, T_weighted, W, T = lbs(betas, full_pose, self.v_template,
                                self.shapedirs, self.posedirs,
                                self.J_regressor, self.parents,
                                self.lbs_weights,
@@ -749,7 +749,7 @@ class SMPLH(SMPL):
                                right_hand_pose], dim=1)
         full_pose += self.pose_mean
 
-        vertices, joints = lbs(betas, full_pose, self.v_template,
+        vertices, joints, T_weighted, W, T = lbs(betas, full_pose, self.v_template,
                                self.shapedirs, self.posedirs,
                                self.J_regressor, self.parents,
                                self.lbs_weights, pose2rot=pose2rot)
@@ -878,7 +878,7 @@ class SMPLHLayer(SMPLH):
              right_hand_pose.reshape(-1, self.NUM_HAND_JOINTS, 3, 3)],
             dim=1)
 
-        vertices, joints = lbs(betas, full_pose, self.v_template,
+        vertices, joints, T_weighted, W, T = lbs(betas, full_pose, self.v_template,
                                self.shapedirs, self.posedirs,
                                self.J_regressor, self.parents,
                                self.lbs_weights, pose2rot=False)
@@ -1072,8 +1072,8 @@ class SMPLX(SMPLH):
             shapedirs = shapedirs[:, :, None]
         if (shapedirs.shape[-1] < self.SHAPE_SPACE_DIM +
                 self.EXPRESSION_SPACE_DIM):
-            print(f'WARNING: You are using a {self.name()} model, with only'
-                  ' 10 shape and 10 expression coefficients.')
+            # print(f'WARNING: You are using a {self.name()} model, with only'
+            #       ' 10 shape and 10 expression coefficients.')
             expr_start_idx = 10
             expr_end_idx = 20
             num_expression_coeffs = min(num_expression_coeffs, 10)
@@ -1253,7 +1253,7 @@ class SMPLX(SMPLH):
 
         shapedirs = torch.cat([self.shapedirs, self.expr_dirs], dim=-1)
 
-        vertices, joints = lbs(shape_components, full_pose, self.v_template,
+        vertices, joints, T_weighted, W, T = lbs(shape_components, full_pose, self.v_template,
                                shapedirs, self.posedirs,
                                self.J_regressor, self.parents,
                                self.lbs_weights, pose2rot=pose2rot,
@@ -1457,7 +1457,7 @@ class SMPLXLayer(SMPLX):
 
         shapedirs = torch.cat([self.shapedirs, self.expr_dirs], dim=-1)
 
-        vertices, joints = lbs(shape_components, full_pose, self.v_template,
+        vertices, joints, T_weighted, W, T = lbs(shape_components, full_pose, self.v_template,
                                shapedirs, self.posedirs,
                                self.J_regressor, self.parents,
                                self.lbs_weights,
@@ -1776,7 +1776,7 @@ class MANOLayer(MANO):
             transl = torch.zeros([batch_size, 3], dtype=dtype, device=device)
 
         full_pose = torch.cat([global_orient, hand_pose], dim=1)
-        vertices, joints = lbs(betas, full_pose, self.v_template,
+        vertices, joints, T_weighted, W, T = lbs(betas, full_pose, self.v_template,
                                self.shapedirs, self.posedirs,
                                self.J_regressor, self.parents,
                                self.lbs_weights, pose2rot=False)
@@ -1944,8 +1944,8 @@ class FLAME(SMPL):
             shapedirs = shapedirs[:, :, None]
         if (shapedirs.shape[-1] < self.SHAPE_SPACE_DIM +
                 self.EXPRESSION_SPACE_DIM):
-            print(f'WARNING: You are using a {self.name()} model, with only'
-                  ' 10 shape and 10 expression coefficients.')
+            # print(f'WARNING: You are using a {self.name()} model, with only'
+            #       ' 10 shape and 10 expression coefficients.')
             expr_start_idx = 10
             expr_end_idx = 20
             num_expression_coeffs = min(num_expression_coeffs, 10)
@@ -2113,7 +2113,7 @@ class FLAME(SMPL):
         shape_components = torch.cat([betas, expression], dim=-1)
         shapedirs = torch.cat([self.shapedirs, self.expr_dirs], dim=-1)
 
-        vertices, joints = lbs(shape_components, full_pose, self.v_template,
+        vertices, joints, T_weighted, W, T = lbs(shape_components, full_pose, self.v_template,
                                shapedirs, self.posedirs,
                                self.J_regressor, self.parents,
                                self.lbs_weights, pose2rot=pose2rot,
@@ -2263,7 +2263,7 @@ class FLAMELayer(FLAME):
         shape_components = torch.cat([betas, expression], dim=-1)
         shapedirs = torch.cat([self.shapedirs, self.expr_dirs], dim=-1)
 
-        vertices, joints = lbs(shape_components, full_pose, self.v_template,
+        vertices, joints, T_weighted, W, T = lbs(shape_components, full_pose, self.v_template,
                                shapedirs, self.posedirs,
                                self.J_regressor, self.parents,
                                self.lbs_weights, pose2rot=False,
