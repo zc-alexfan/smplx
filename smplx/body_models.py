@@ -306,7 +306,7 @@ class SMPL(nn.Module):
         else:
             v_shaped = self.v_template + blend_shapes(betas, self.shapedirs)
         J = vertices2joints(self.J_regressor, v_shaped)
-        T_hip = J[0, 0]
+        T_hip = J[:, 0]
         return T_hip
 
     def extra_repr(self) -> str:
