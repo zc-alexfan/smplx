@@ -71,7 +71,9 @@ class SMPLHOutput(SMPLOutput):
 class SMPLXOutput(SMPLHOutput):
     expression: Optional[Tensor] = None
     jaw_pose: Optional[Tensor] = None
-
+    T: Optional[Tensor] = None
+    T_weighted: Optional[Tensor] = None
+    weights: Optional[Tensor] = None
 
 @dataclass
 class MANOOutput(ModelOutput):

@@ -1347,7 +1347,11 @@ class SMPLX(SMPLH):
                               right_hand_pose=right_hand_pose,
                               jaw_pose=jaw_pose,
                               v_shaped=v_shaped,
-                              full_pose=full_pose if return_full_pose else None)
+                              full_pose=full_pose if return_full_pose else None, 
+                            T=T,
+                            T_weighted=T_weighted,
+                            weights=W
+                              )
         return output
 
 
